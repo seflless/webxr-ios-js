@@ -2,7 +2,7 @@
 
 ### Planned
 
-<img src=""/>
+<img src="webxr-tangible-controls-image-tracking.png"/>
 
 ### Use
 
