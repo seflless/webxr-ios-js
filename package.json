@@ -9,10 +9,6 @@
     "minify": "cross-env NODE_ENV=production rollup -c rollup-minify.config.js",
     "start": "npm run build && http-server . -c-1"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/MozillaReality/webxr-ios-js.git"
-  },
   "keywords": [],
   "author": "",
   "license": "MPL",
@@ -34,6 +30,6 @@
   },
   "dependencies": {
     "gl-matrix": "^2.5.1",
-    "webxr-polyfill": "git://github.com/mozilla-mobile/webxr-polyfill-for-ios-viewer.git#webxr-ios"
+    "webxr-polyfill": "git+ssh://git@github.com:mozilla-mobile/webxr-polyfill-for-ios-viewer.git#webxr-ios"
   }
 }

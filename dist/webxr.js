@@ -150,7 +150,26 @@ function create() {
   out[15] = 1;
   return out;
 }
-
+function clone(a) {
+  let out = new ARRAY_TYPE(16);
+  out[0] = a[0];
+  out[1] = a[1];
+  out[2] = a[2];
+  out[3] = a[3];
+  out[4] = a[4];
+  out[5] = a[5];
+  out[6] = a[6];
+  out[7] = a[7];
+  out[8] = a[8];
+  out[9] = a[9];
+  out[10] = a[10];
+  out[11] = a[11];
+  out[12] = a[12];
+  out[13] = a[13];
+  out[14] = a[14];
+  out[15] = a[15];
+  return out;
+}
 function copy(out, a) {
   out[0] = a[0];
   out[1] = a[1];
@@ -264,12 +283,119 @@ function multiply(out, a, b) {
 
 
 
+function rotateX(out, a, rad) {
+  let s = Math.sin(rad);
+  let c = Math.cos(rad);
+  let a10 = a[4];
+  let a11 = a[5];
+  let a12 = a[6];
+  let a13 = a[7];
+  let a20 = a[8];
+  let a21 = a[9];
+  let a22 = a[10];
+  let a23 = a[11];
+  if (a !== out) {
+    out[0]  = a[0];
+    out[1]  = a[1];
+    out[2]  = a[2];
+    out[3]  = a[3];
+    out[12] = a[12];
+    out[13] = a[13];
+    out[14] = a[14];
+    out[15] = a[15];
+  }
+  out[4] = a10 * c + a20 * s;
+  out[5] = a11 * c + a21 * s;
+  out[6] = a12 * c + a22 * s;
+  out[7] = a13 * c + a23 * s;
+  out[8] = a20 * c - a10 * s;
+  out[9] = a21 * c - a11 * s;
+  out[10] = a22 * c - a12 * s;
+  out[11] = a23 * c - a13 * s;
+  return out;
+}
+function rotateY(out, a, rad) {
+  let s = Math.sin(rad);
+  let c = Math.cos(rad);
+  let a00 = a[0];
+  let a01 = a[1];
+  let a02 = a[2];
+  let a03 = a[3];
+  let a20 = a[8];
+  let a21 = a[9];
+  let a22 = a[10];
+  let a23 = a[11];
+  if (a !== out) {
+    out[4]  = a[4];
+    out[5]  = a[5];
+    out[6]  = a[6];
+    out[7]  = a[7];
+    out[12] = a[12];
+    out[13] = a[13];
+    out[14] = a[14];
+    out[15] = a[15];
+  }
+  out[0] = a00 * c - a20 * s;
+  out[1] = a01 * c - a21 * s;
+  out[2] = a02 * c - a22 * s;
+  out[3] = a03 * c - a23 * s;
+  out[8] = a00 * s + a20 * c;
+  out[9] = a01 * s + a21 * c;
+  out[10] = a02 * s + a22 * c;
+  out[11] = a03 * s + a23 * c;
+  return out;
+}
 
+function fromTranslation(out, v) {
+  out[0] = 1;
+  out[1] = 0;
+  out[2] = 0;
+  out[3] = 0;
+  out[4] = 0;
+  out[5] = 1;
+  out[6] = 0;
+  out[7] = 0;
+  out[8] = 0;
+  out[9] = 0;
+  out[10] = 1;
+  out[11] = 0;
+  out[12] = v[0];
+  out[13] = v[1];
+  out[14] = v[2];
+  out[15] = 1;
+  return out;
+}
 
-
-
-
-
+function fromRotation(out, rad, axis) {
+  let x = axis[0], y = axis[1], z = axis[2];
+  let len = Math.sqrt(x * x + y * y + z * z);
+  let s, c, t;
+  if (len < EPSILON) { return null; }
+  len = 1 / len;
+  x *= len;
+  y *= len;
+  z *= len;
+  s = Math.sin(rad);
+  c = Math.cos(rad);
+  t = 1 - c;
+  out[0] = x * x * t + c;
+  out[1] = y * x * t + z * s;
+  out[2] = z * x * t - y * s;
+  out[3] = 0;
+  out[4] = x * y * t - z * s;
+  out[5] = y * y * t + c;
+  out[6] = z * y * t + x * s;
+  out[7] = 0;
+  out[8] = x * z * t + y * s;
+  out[9] = y * z * t - x * s;
+  out[10] = z * z * t + c;
+  out[11] = 0;
+  out[12] = 0;
+  out[13] = 0;
+  out[14] = 0;
+  out[15] = 1;
+  return out;
+}
 
 
 
@@ -344,6 +470,73 @@ function getRotation(out, mat) {
   return out;
 }
 
+
+
+
+function perspective(out, fovy, aspect, near, far) {
+  let f = 1.0 / Math.tan(fovy / 2), nf;
+  out[0] = f / aspect;
+  out[1] = 0;
+  out[2] = 0;
+  out[3] = 0;
+  out[4] = 0;
+  out[5] = f;
+  out[6] = 0;
+  out[7] = 0;
+  out[8] = 0;
+  out[9] = 0;
+  out[11] = -1;
+  out[12] = 0;
+  out[13] = 0;
+  out[15] = 0;
+  if (far != null && far !== Infinity) {
+    nf = 1 / (near - far);
+    out[10] = (far + near) * nf;
+    out[14] = (2 * far * near) * nf;
+  } else {
+    out[10] = -1;
+    out[14] = -2 * near;
+  }
+  return out;
+}
+
+
+
+
+
+
+
+
+
+
+
+function equals$1(a, b) {
+  let a0  = a[0],  a1  = a[1],  a2  = a[2],  a3  = a[3];
+  let a4  = a[4],  a5  = a[5],  a6  = a[6],  a7  = a[7];
+  let a8  = a[8],  a9  = a[9],  a10 = a[10], a11 = a[11];
+  let a12 = a[12], a13 = a[13], a14 = a[14], a15 = a[15];
+  let b0  = b[0],  b1  = b[1],  b2  = b[2],  b3  = b[3];
+  let b4  = b[4],  b5  = b[5],  b6  = b[6],  b7  = b[7];
+  let b8  = b[8],  b9  = b[9],  b10 = b[10], b11 = b[11];
+  let b12 = b[12], b13 = b[13], b14 = b[14], b15 = b[15];
+  return (Math.abs(a0 - b0) <= EPSILON*Math.max(1.0, Math.abs(a0), Math.abs(b0)) &&
+          Math.abs(a1 - b1) <= EPSILON*Math.max(1.0, Math.abs(a1), Math.abs(b1)) &&
+          Math.abs(a2 - b2) <= EPSILON*Math.max(1.0, Math.abs(a2), Math.abs(b2)) &&
+          Math.abs(a3 - b3) <= EPSILON*Math.max(1.0, Math.abs(a3), Math.abs(b3)) &&
+          Math.abs(a4 - b4) <= EPSILON*Math.max(1.0, Math.abs(a4), Math.abs(b4)) &&
+          Math.abs(a5 - b5) <= EPSILON*Math.max(1.0, Math.abs(a5), Math.abs(b5)) &&
+          Math.abs(a6 - b6) <= EPSILON*Math.max(1.0, Math.abs(a6), Math.abs(b6)) &&
+          Math.abs(a7 - b7) <= EPSILON*Math.max(1.0, Math.abs(a7), Math.abs(b7)) &&
+          Math.abs(a8 - b8) <= EPSILON*Math.max(1.0, Math.abs(a8), Math.abs(b8)) &&
+          Math.abs(a9 - b9) <= EPSILON*Math.max(1.0, Math.abs(a9), Math.abs(b9)) &&
+          Math.abs(a10 - b10) <= EPSILON*Math.max(1.0, Math.abs(a10), Math.abs(b10)) &&
+          Math.abs(a11 - b11) <= EPSILON*Math.max(1.0, Math.abs(a11), Math.abs(b11)) &&
+          Math.abs(a12 - b12) <= EPSILON*Math.max(1.0, Math.abs(a12), Math.abs(b12)) &&
+          Math.abs(a13 - b13) <= EPSILON*Math.max(1.0, Math.abs(a13), Math.abs(b13)) &&
+          Math.abs(a14 - b14) <= EPSILON*Math.max(1.0, Math.abs(a14), Math.abs(b14)) &&
+          Math.abs(a15 - b15) <= EPSILON*Math.max(1.0, Math.abs(a15), Math.abs(b15)));
+}
+
 function create$1() {
   let out = new ARRAY_TYPE(3);
   if(ARRAY_TYPE != Float32Array) {
@@ -379,7 +572,12 @@ function copy$1(out, a) {
   out[2] = a[2];
   return out;
 }
-
+function set$1(out, x, y, z) {
+  out[0] = x;
+  out[1] = y;
+  out[2] = z;
+  return out;
+}
 function add$1(out, a, b) {
   out[0] = a[0] + b[0];
   out[1] = a[1] + b[1];
@@ -434,7 +632,15 @@ function cross(out, a, b) {
 
 
 
-
+function transformMat4(out, a, m) {
+  let x = a[0], y = a[1], z = a[2];
+  let w = m[3] * x + m[7] * y + m[11] * z + m[15];
+  w = w || 1.0;
+  out[0] = (m[0] * x + m[4] * y + m[8] * z + m[12]) / w;
+  out[1] = (m[1] * x + m[5] * y + m[9] * z + m[13]) / w;
+  out[2] = (m[2] * x + m[6] * y + m[10] * z + m[14]) / w;
+  return out;
+}
 
 function transformQuat(out, a, q) {
     let qx = q[0], qy = q[1], qz = q[2], qw = q[3];
@@ -477,7 +683,13 @@ function angle(a, b) {
 }
 
 
-
+function equals$2(a, b) {
+  let a0 = a[0], a1 = a[1], a2 = a[2];
+  let b0 = b[0], b1 = b[1], b2 = b[2];
+  return (Math.abs(a0 - b0) <= EPSILON*Math.max(1.0, Math.abs(a0), Math.abs(b0)) &&
+          Math.abs(a1 - b1) <= EPSILON*Math.max(1.0, Math.abs(a1), Math.abs(b1)) &&
+          Math.abs(a2 - b2) <= EPSILON*Math.max(1.0, Math.abs(a2), Math.abs(b2)));
+}
 
 
 
@@ -558,7 +770,13 @@ function copy$3(out, a) {
   out[3] = a[3];
   return out;
 }
-
+function set$3(out, x, y, z, w) {
+  out[0] = x;
+  out[1] = y;
+  out[2] = z;
+  out[3] = w;
+  return out;
+}
 
 
 
@@ -594,7 +812,14 @@ function normalize$1(out, a) {
 
 
 
-
+function transformMat4$1(out, a, m) {
+  let x = a[0], y = a[1], z = a[2], w = a[3];
+  out[0] = m[0] * x + m[4] * y + m[8] * z + m[12] * w;
+  out[1] = m[1] * x + m[5] * y + m[9] * z + m[13] * w;
+  out[2] = m[2] * x + m[6] * y + m[10] * z + m[14] * w;
+  out[3] = m[3] * x + m[7] * y + m[11] * z + m[15] * w;
+  return out;
+}
 
 
 
@@ -1847,532 +2072,11 @@ host this content on a secure origin for the best user experience.
   }
 }
 
-const EPSILON$1 = 0.000001;
-let ARRAY_TYPE$1 = (typeof Float32Array !== 'undefined') ? Float32Array : Array;
-
-
-const degree$1 = Math.PI / 180;
-
-function create$5() {
-  let out = new ARRAY_TYPE$1(16);
-  if(ARRAY_TYPE$1 != Float32Array) {
-    out[1] = 0;
-    out[2] = 0;
-    out[3] = 0;
-    out[4] = 0;
-    out[6] = 0;
-    out[7] = 0;
-    out[8] = 0;
-    out[9] = 0;
-    out[11] = 0;
-    out[12] = 0;
-    out[13] = 0;
-    out[14] = 0;
-  }
-  out[0] = 1;
-  out[5] = 1;
-  out[10] = 1;
-  out[15] = 1;
-  return out;
-}
-function clone$5(a) {
-  let out = new ARRAY_TYPE$1(16);
-  out[0] = a[0];
-  out[1] = a[1];
-  out[2] = a[2];
-  out[3] = a[3];
-  out[4] = a[4];
-  out[5] = a[5];
-  out[6] = a[6];
-  out[7] = a[7];
-  out[8] = a[8];
-  out[9] = a[9];
-  out[10] = a[10];
-  out[11] = a[11];
-  out[12] = a[12];
-  out[13] = a[13];
-  out[14] = a[14];
-  out[15] = a[15];
-  return out;
-}
-function copy$5(out, a) {
-  out[0] = a[0];
-  out[1] = a[1];
-  out[2] = a[2];
-  out[3] = a[3];
-  out[4] = a[4];
-  out[5] = a[5];
-  out[6] = a[6];
-  out[7] = a[7];
-  out[8] = a[8];
-  out[9] = a[9];
-  out[10] = a[10];
-  out[11] = a[11];
-  out[12] = a[12];
-  out[13] = a[13];
-  out[14] = a[14];
-  out[15] = a[15];
-  return out;
-}
-
-
-function identity$3(out) {
-  out[0] = 1;
-  out[1] = 0;
-  out[2] = 0;
-  out[3] = 0;
-  out[4] = 0;
-  out[5] = 1;
-  out[6] = 0;
-  out[7] = 0;
-  out[8] = 0;
-  out[9] = 0;
-  out[10] = 1;
-  out[11] = 0;
-  out[12] = 0;
-  out[13] = 0;
-  out[14] = 0;
-  out[15] = 1;
-  return out;
-}
-
-function invert$3(out, a) {
-  let a00 = a[0], a01 = a[1], a02 = a[2], a03 = a[3];
-  let a10 = a[4], a11 = a[5], a12 = a[6], a13 = a[7];
-  let a20 = a[8], a21 = a[9], a22 = a[10], a23 = a[11];
-  let a30 = a[12], a31 = a[13], a32 = a[14], a33 = a[15];
-  let b00 = a00 * a11 - a01 * a10;
-  let b01 = a00 * a12 - a02 * a10;
-  let b02 = a00 * a13 - a03 * a10;
-  let b03 = a01 * a12 - a02 * a11;
-  let b04 = a01 * a13 - a03 * a11;
-  let b05 = a02 * a13 - a03 * a12;
-  let b06 = a20 * a31 - a21 * a30;
-  let b07 = a20 * a32 - a22 * a30;
-  let b08 = a20 * a33 - a23 * a30;
-  let b09 = a21 * a32 - a22 * a31;
-  let b10 = a21 * a33 - a23 * a31;
-  let b11 = a22 * a33 - a23 * a32;
-  let det = b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06;
-  if (!det) {
-    return null;
-  }
-  det = 1.0 / det;
-  out[0] = (a11 * b11 - a12 * b10 + a13 * b09) * det;
-  out[1] = (a02 * b10 - a01 * b11 - a03 * b09) * det;
-  out[2] = (a31 * b05 - a32 * b04 + a33 * b03) * det;
-  out[3] = (a22 * b04 - a21 * b05 - a23 * b03) * det;
-  out[4] = (a12 * b08 - a10 * b11 - a13 * b07) * det;
-  out[5] = (a00 * b11 - a02 * b08 + a03 * b07) * det;
-  out[6] = (a32 * b02 - a30 * b05 - a33 * b01) * det;
-  out[7] = (a20 * b05 - a22 * b02 + a23 * b01) * det;
-  out[8] = (a10 * b10 - a11 * b08 + a13 * b06) * det;
-  out[9] = (a01 * b08 - a00 * b10 - a03 * b06) * det;
-  out[10] = (a30 * b04 - a31 * b02 + a33 * b00) * det;
-  out[11] = (a21 * b02 - a20 * b04 - a23 * b00) * det;
-  out[12] = (a11 * b07 - a10 * b09 - a12 * b06) * det;
-  out[13] = (a00 * b09 - a01 * b07 + a02 * b06) * det;
-  out[14] = (a31 * b01 - a30 * b03 - a32 * b00) * det;
-  out[15] = (a20 * b03 - a21 * b01 + a22 * b00) * det;
-  return out;
-}
-
-
-function multiply$5(out, a, b) {
-  let a00 = a[0], a01 = a[1], a02 = a[2], a03 = a[3];
-  let a10 = a[4], a11 = a[5], a12 = a[6], a13 = a[7];
-  let a20 = a[8], a21 = a[9], a22 = a[10], a23 = a[11];
-  let a30 = a[12], a31 = a[13], a32 = a[14], a33 = a[15];
-  let b0  = b[0], b1 = b[1], b2 = b[2], b3 = b[3];
-  out[0] = b0*a00 + b1*a10 + b2*a20 + b3*a30;
-  out[1] = b0*a01 + b1*a11 + b2*a21 + b3*a31;
-  out[2] = b0*a02 + b1*a12 + b2*a22 + b3*a32;
-  out[3] = b0*a03 + b1*a13 + b2*a23 + b3*a33;
-  b0 = b[4]; b1 = b[5]; b2 = b[6]; b3 = b[7];
-  out[4] = b0*a00 + b1*a10 + b2*a20 + b3*a30;
-  out[5] = b0*a01 + b1*a11 + b2*a21 + b3*a31;
-  out[6] = b0*a02 + b1*a12 + b2*a22 + b3*a32;
-  out[7] = b0*a03 + b1*a13 + b2*a23 + b3*a33;
-  b0 = b[8]; b1 = b[9]; b2 = b[10]; b3 = b[11];
-  out[8] = b0*a00 + b1*a10 + b2*a20 + b3*a30;
-  out[9] = b0*a01 + b1*a11 + b2*a21 + b3*a31;
-  out[10] = b0*a02 + b1*a12 + b2*a22 + b3*a32;
-  out[11] = b0*a03 + b1*a13 + b2*a23 + b3*a33;
-  b0 = b[12]; b1 = b[13]; b2 = b[14]; b3 = b[15];
-  out[12] = b0*a00 + b1*a10 + b2*a20 + b3*a30;
-  out[13] = b0*a01 + b1*a11 + b2*a21 + b3*a31;
-  out[14] = b0*a02 + b1*a12 + b2*a22 + b3*a32;
-  out[15] = b0*a03 + b1*a13 + b2*a23 + b3*a33;
-  return out;
-}
-
-
-
-function rotateX$3(out, a, rad) {
-  let s = Math.sin(rad);
-  let c = Math.cos(rad);
-  let a10 = a[4];
-  let a11 = a[5];
-  let a12 = a[6];
-  let a13 = a[7];
-  let a20 = a[8];
-  let a21 = a[9];
-  let a22 = a[10];
-  let a23 = a[11];
-  if (a !== out) {
-    out[0]  = a[0];
-    out[1]  = a[1];
-    out[2]  = a[2];
-    out[3]  = a[3];
-    out[12] = a[12];
-    out[13] = a[13];
-    out[14] = a[14];
-    out[15] = a[15];
-  }
-  out[4] = a10 * c + a20 * s;
-  out[5] = a11 * c + a21 * s;
-  out[6] = a12 * c + a22 * s;
-  out[7] = a13 * c + a23 * s;
-  out[8] = a20 * c - a10 * s;
-  out[9] = a21 * c - a11 * s;
-  out[10] = a22 * c - a12 * s;
-  out[11] = a23 * c - a13 * s;
-  return out;
-}
-function rotateY$3(out, a, rad) {
-  let s = Math.sin(rad);
-  let c = Math.cos(rad);
-  let a00 = a[0];
-  let a01 = a[1];
-  let a02 = a[2];
-  let a03 = a[3];
-  let a20 = a[8];
-  let a21 = a[9];
-  let a22 = a[10];
-  let a23 = a[11];
-  if (a !== out) {
-    out[4]  = a[4];
-    out[5]  = a[5];
-    out[6]  = a[6];
-    out[7]  = a[7];
-    out[12] = a[12];
-    out[13] = a[13];
-    out[14] = a[14];
-    out[15] = a[15];
-  }
-  out[0] = a00 * c - a20 * s;
-  out[1] = a01 * c - a21 * s;
-  out[2] = a02 * c - a22 * s;
-  out[3] = a03 * c - a23 * s;
-  out[8] = a00 * s + a20 * c;
-  out[9] = a01 * s + a21 * c;
-  out[10] = a02 * s + a22 * c;
-  out[11] = a03 * s + a23 * c;
-  return out;
-}
-
-function fromTranslation$2(out, v) {
-  out[0] = 1;
-  out[1] = 0;
-  out[2] = 0;
-  out[3] = 0;
-  out[4] = 0;
-  out[5] = 1;
-  out[6] = 0;
-  out[7] = 0;
-  out[8] = 0;
-  out[9] = 0;
-  out[10] = 1;
-  out[11] = 0;
-  out[12] = v[0];
-  out[13] = v[1];
-  out[14] = v[2];
-  out[15] = 1;
-  return out;
-}
-
-function fromRotation$2(out, rad, axis) {
-  let x = axis[0], y = axis[1], z = axis[2];
-  let len = Math.sqrt(x * x + y * y + z * z);
-  let s, c, t;
-  if (len < EPSILON$1) { return null; }
-  len = 1 / len;
-  x *= len;
-  y *= len;
-  z *= len;
-  s = Math.sin(rad);
-  c = Math.cos(rad);
-  t = 1 - c;
-  out[0] = x * x * t + c;
-  out[1] = y * x * t + z * s;
-  out[2] = z * x * t - y * s;
-  out[3] = 0;
-  out[4] = x * y * t - z * s;
-  out[5] = y * y * t + c;
-  out[6] = z * y * t + x * s;
-  out[7] = 0;
-  out[8] = x * z * t + y * s;
-  out[9] = y * z * t - x * s;
-  out[10] = z * z * t + c;
-  out[11] = 0;
-  out[12] = 0;
-  out[13] = 0;
-  out[14] = 0;
-  out[15] = 1;
-  return out;
-}
-
-
-
-function fromRotationTranslation$1(out, q, v) {
-  let x = q[0], y = q[1], z = q[2], w = q[3];
-  let x2 = x + x;
-  let y2 = y + y;
-  let z2 = z + z;
-  let xx = x * x2;
-  let xy = x * y2;
-  let xz = x * z2;
-  let yy = y * y2;
-  let yz = y * z2;
-  let zz = z * z2;
-  let wx = w * x2;
-  let wy = w * y2;
-  let wz = w * z2;
-  out[0] = 1 - (yy + zz);
-  out[1] = xy + wz;
-  out[2] = xz - wy;
-  out[3] = 0;
-  out[4] = xy - wz;
-  out[5] = 1 - (xx + zz);
-  out[6] = yz + wx;
-  out[7] = 0;
-  out[8] = xz + wy;
-  out[9] = yz - wx;
-  out[10] = 1 - (xx + yy);
-  out[11] = 0;
-  out[12] = v[0];
-  out[13] = v[1];
-  out[14] = v[2];
-  out[15] = 1;
-  return out;
-}
-
-function getTranslation$1(out, mat) {
-  out[0] = mat[12];
-  out[1] = mat[13];
-  out[2] = mat[14];
-  return out;
-}
-
-function getRotation$1(out, mat) {
-  let trace = mat[0] + mat[5] + mat[10];
-  let S = 0;
-  if (trace > 0) {
-    S = Math.sqrt(trace + 1.0) * 2;
-    out[3] = 0.25 * S;
-    out[0] = (mat[6] - mat[9]) / S;
-    out[1] = (mat[8] - mat[2]) / S;
-    out[2] = (mat[1] - mat[4]) / S;
-  } else if ((mat[0] > mat[5]) && (mat[0] > mat[10])) {
-    S = Math.sqrt(1.0 + mat[0] - mat[5] - mat[10]) * 2;
-    out[3] = (mat[6] - mat[9]) / S;
-    out[0] = 0.25 * S;
-    out[1] = (mat[1] + mat[4]) / S;
-    out[2] = (mat[8] + mat[2]) / S;
-  } else if (mat[5] > mat[10]) {
-    S = Math.sqrt(1.0 + mat[5] - mat[0] - mat[10]) * 2;
-    out[3] = (mat[8] - mat[2]) / S;
-    out[0] = (mat[1] + mat[4]) / S;
-    out[1] = 0.25 * S;
-    out[2] = (mat[6] + mat[9]) / S;
-  } else {
-    S = Math.sqrt(1.0 + mat[10] - mat[0] - mat[5]) * 2;
-    out[3] = (mat[1] - mat[4]) / S;
-    out[0] = (mat[8] + mat[2]) / S;
-    out[1] = (mat[6] + mat[9]) / S;
-    out[2] = 0.25 * S;
-  }
-  return out;
-}
-
-
-
-
-function perspective$1(out, fovy, aspect, near, far) {
-  let f = 1.0 / Math.tan(fovy / 2), nf;
-  out[0] = f / aspect;
-  out[1] = 0;
-  out[2] = 0;
-  out[3] = 0;
-  out[4] = 0;
-  out[5] = f;
-  out[6] = 0;
-  out[7] = 0;
-  out[8] = 0;
-  out[9] = 0;
-  out[11] = -1;
-  out[12] = 0;
-  out[13] = 0;
-  out[15] = 0;
-  if (far != null && far !== Infinity) {
-    nf = 1 / (near - far);
-    out[10] = (far + near) * nf;
-    out[14] = (2 * far * near) * nf;
-  } else {
-    out[10] = -1;
-    out[14] = -2 * near;
-  }
-  return out;
-}
-
-
-
-
-
-
-
-
-
-
-
-function equals$7(a, b) {
-  let a0  = a[0],  a1  = a[1],  a2  = a[2],  a3  = a[3];
-  let a4  = a[4],  a5  = a[5],  a6  = a[6],  a7  = a[7];
-  let a8  = a[8],  a9  = a[9],  a10 = a[10], a11 = a[11];
-  let a12 = a[12], a13 = a[13], a14 = a[14], a15 = a[15];
-  let b0  = b[0],  b1  = b[1],  b2  = b[2],  b3  = b[3];
-  let b4  = b[4],  b5  = b[5],  b6  = b[6],  b7  = b[7];
-  let b8  = b[8],  b9  = b[9],  b10 = b[10], b11 = b[11];
-  let b12 = b[12], b13 = b[13], b14 = b[14], b15 = b[15];
-  return (Math.abs(a0 - b0) <= EPSILON$1*Math.max(1.0, Math.abs(a0), Math.abs(b0)) &&
-          Math.abs(a1 - b1) <= EPSILON$1*Math.max(1.0, Math.abs(a1), Math.abs(b1)) &&
-          Math.abs(a2 - b2) <= EPSILON$1*Math.max(1.0, Math.abs(a2), Math.abs(b2)) &&
-          Math.abs(a3 - b3) <= EPSILON$1*Math.max(1.0, Math.abs(a3), Math.abs(b3)) &&
-          Math.abs(a4 - b4) <= EPSILON$1*Math.max(1.0, Math.abs(a4), Math.abs(b4)) &&
-          Math.abs(a5 - b5) <= EPSILON$1*Math.max(1.0, Math.abs(a5), Math.abs(b5)) &&
-          Math.abs(a6 - b6) <= EPSILON$1*Math.max(1.0, Math.abs(a6), Math.abs(b6)) &&
-          Math.abs(a7 - b7) <= EPSILON$1*Math.max(1.0, Math.abs(a7), Math.abs(b7)) &&
-          Math.abs(a8 - b8) <= EPSILON$1*Math.max(1.0, Math.abs(a8), Math.abs(b8)) &&
-          Math.abs(a9 - b9) <= EPSILON$1*Math.max(1.0, Math.abs(a9), Math.abs(b9)) &&
-          Math.abs(a10 - b10) <= EPSILON$1*Math.max(1.0, Math.abs(a10), Math.abs(b10)) &&
-          Math.abs(a11 - b11) <= EPSILON$1*Math.max(1.0, Math.abs(a11), Math.abs(b11)) &&
-          Math.abs(a12 - b12) <= EPSILON$1*Math.max(1.0, Math.abs(a12), Math.abs(b12)) &&
-          Math.abs(a13 - b13) <= EPSILON$1*Math.max(1.0, Math.abs(a13), Math.abs(b13)) &&
-          Math.abs(a14 - b14) <= EPSILON$1*Math.max(1.0, Math.abs(a14), Math.abs(b14)) &&
-          Math.abs(a15 - b15) <= EPSILON$1*Math.max(1.0, Math.abs(a15), Math.abs(b15)));
-}
-
-function create$6() {
-  let out = new ARRAY_TYPE$1(3);
-  if(ARRAY_TYPE$1 != Float32Array) {
-    out[0] = 0;
-    out[1] = 0;
-    out[2] = 0;
-  }
-  return out;
-}
-
-
-
-
-function set$6(out, x, y, z) {
-  out[0] = x;
-  out[1] = y;
-  out[2] = z;
-  return out;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function dot$3(a, b) {
-  return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-}
-function cross$1(out, a, b) {
-  let ax = a[0], ay = a[1], az = a[2];
-  let bx = b[0], by = b[1], bz = b[2];
-  out[0] = ay * bz - az * by;
-  out[1] = az * bx - ax * bz;
-  out[2] = ax * by - ay * bx;
-  return out;
-}
-
-
-
-
-function transformMat4$2(out, a, m) {
-  let x = a[0], y = a[1], z = a[2];
-  let w = m[3] * x + m[7] * y + m[11] * z + m[15];
-  w = w || 1.0;
-  out[0] = (m[0] * x + m[4] * y + m[8] * z + m[12]) / w;
-  out[1] = (m[1] * x + m[5] * y + m[9] * z + m[13]) / w;
-  out[2] = (m[2] * x + m[6] * y + m[10] * z + m[14]) / w;
-  return out;
-}
-
-
-
-
-
-
-
-
-function equals$8(a, b) {
-  let a0 = a[0], a1 = a[1], a2 = a[2];
-  let b0 = b[0], b1 = b[1], b2 = b[2];
-  return (Math.abs(a0 - b0) <= EPSILON$1*Math.max(1.0, Math.abs(a0), Math.abs(b0)) &&
-          Math.abs(a1 - b1) <= EPSILON$1*Math.max(1.0, Math.abs(a1), Math.abs(b1)) &&
-          Math.abs(a2 - b2) <= EPSILON$1*Math.max(1.0, Math.abs(a2), Math.abs(b2)));
-}
-
-
-
-
-
-
-
-const forEach$2 = (function() {
-  let vec = create$6();
-  return function(a, stride, offset, count, fn, arg) {
-    let i, l;
-    if(!stride) {
-      stride = 3;
-    }
-    if(!offset) {
-      offset = 0;
-    }
-    if(count) {
-      l = Math.min((count * stride) + offset, a.length);
-    } else {
-      l = a.length;
-    }
-    for(i = offset; i < l; i += stride) {
-      vec[0] = a[i]; vec[1] = a[i+1]; vec[2] = a[i+2];
-      fn(vec, vec, arg);
-      a[i] = vec[0]; a[i+1] = vec[1]; a[i+2] = vec[2];
-    }
-    return a;
-  };
-})();
-
 class XRAnchor extends EventTarget {
 	constructor(transform, uid=null, timestamp = 0){
 		super();
 		this._uid = uid || XRAnchor._generateUID();
-		this._transform = clone$5(transform);
+		this._transform = clone(transform);
 		this._timestamp = timestamp;
 		this._poseChanged = true;
 		this._deleted = false;
@@ -2392,7 +2096,7 @@ class XRAnchor extends EventTarget {
 	updateModelMatrix (transform, timestamp) {
 		this._timestamp = timestamp;
 		if (!this._deleted) {
-			if (!equals$7(this._transform, transform)) {
+			if (!equals$1(this._transform, transform)) {
 				this._poseChanged = true;
 				for ( var i = 0; i < 16; i ++ ) {
 					this._transform[ i ] = transform[ i ];
@@ -2413,10 +2117,10 @@ class XRAnchor extends EventTarget {
 		}
 	}
 	get position(){
-		return getTranslation$1(new Float32Array(3), this._poseMatrix)
+		return getTranslation(new Float32Array(3), this._poseMatrix)
 	}
 	get orientation(){
-		return getRotation$1(new Float32Array(4), this._poseMatrix)
+		return getRotation(new Float32Array(4), this._poseMatrix)
 	}
 	get uid(){ return this._uid }
 	static _generateUID(){
@@ -2430,11 +2134,11 @@ class XRAnchorOffset extends XRAnchor {
 		this._anchor = anchor;
 		this._timestamp = anchor.timeStamp;
 		this._tempArray = new Float32Array(16);
-		this._offsetMatrix = create$5();
+		this._offsetMatrix = create();
 		if (offset) {
-			copy$5(this._offsetMatrix, offset);
+			copy(this._offsetMatrix, offset);
 		}
-		multiply$5(this._transform, anchor.modelMatrix, this._offsetMatrix);
+		multiply(this._transform, anchor.modelMatrix, this._offsetMatrix);
 		this._handleAnchorUpdateListener = this._handleAnchorUpdate.bind(this);
 		this._notifyOfRemovalListener = this.notifyOfRemoval.bind(this);
 		this._handleReplaceAnchorListener = this._handleReplaceAnchor.bind(this);
@@ -2452,7 +2156,7 @@ class XRAnchorOffset extends XRAnchor {
 		this._anchor.addEventListener("replaceAnchor", this._handleReplaceAnchorListener);
 	}
 	_handleAnchorUpdate() {
-		multiply$5(this._tempArray, this._anchor.modelMatrix, this._offsetMatrix);
+		multiply(this._tempArray, this._anchor.modelMatrix, this._offsetMatrix);
 		this.updateModelMatrix(this._tempArray, Math.max(this._anchor.timeStamp, this._timestamp));
 	}
 	get modelMatrix () { return this._transform }
@@ -2462,7 +2166,7 @@ class XRAnchorOffset extends XRAnchor {
 	get anchor(){ return this._anchor }
 	get offsetMatrix(){ return this._offsetMatrix }
 	set offsetMatrix(array16){
-		copy$5(this._offsetMatrix, array16);
+		copy(this._offsetMatrix, array16);
 		this._handleAnchorUpdate();
 	}
 }
@@ -2558,9 +2262,9 @@ class XRMesh extends XRAnchor {
                 if (g.vertices) {
                     currentVertexIndex = 0;
                     for ( var i = 0, l = g.vertexCount; i < l; i++ ) {
-                        if (Math.abs(this._vertexPositions[currentVertexIndex++] - g.vertices[i].x) > EPSILON$1 ||
-                            Math.abs(this._vertexPositions[currentVertexIndex++] - g.vertices[i].y) > EPSILON$1 ||
-                            Math.abs(this._vertexPositions[currentVertexIndex++] - g.vertices[i].z) > EPSILON$1)
+                        if (Math.abs(this._vertexPositions[currentVertexIndex++] - g.vertices[i].x) > EPSILON ||
+                            Math.abs(this._vertexPositions[currentVertexIndex++] - g.vertices[i].y) > EPSILON ||
+                            Math.abs(this._vertexPositions[currentVertexIndex++] - g.vertices[i].z) > EPSILON)
                         {
                             this._vertexPositionsChanged = true;
                             break;
@@ -2571,8 +2275,8 @@ class XRMesh extends XRAnchor {
                 if (g.textureCoordinates) {
                     currentVertexIndex = 0;
                     for ( var i = 0, l = g.vertexCount; i < l; i++ ) {
-                        if (Math.abs(this._textureCoordinates[currentVertexIndex++] - g.textureCoordinates[i].x) > EPSILON$1 ||
-                            Math.abs(this._textureCoordinates[currentVertexIndex++] - g.textureCoordinates[i].x) > EPSILON$1)
+                        if (Math.abs(this._textureCoordinates[currentVertexIndex++] - g.textureCoordinates[i].x) > EPSILON ||
+                            Math.abs(this._textureCoordinates[currentVertexIndex++] - g.textureCoordinates[i].x) > EPSILON)
                         {
                             this._textureCoordinatesChanged = true;
                             break;
@@ -2644,7 +2348,7 @@ class XRMesh extends XRAnchor {
         if (a.length != b.length)
             return false;
         for (var i = 0, l=a.length; i < l; i++) {
-            if (Math.abs(a[i] - b[i]) > EPSILON$1) {
+            if (Math.abs(a[i] - b[i]) > EPSILON) {
                 return false;
             }
         }
@@ -2669,7 +2373,7 @@ class XRFaceMesh extends XRMesh {
             let j = blendShapeNames[i];
             var a0 = this._blendShapes[j];
             var b0 = blendShapeArray[i];
-            if (Math.abs(a0 - b0) > EPSILON$1) {
+            if (Math.abs(a0 - b0) > EPSILON) {
                 this._blendShapesChanged = true;
                 this._blendShapes[j] = b0;
             }
@@ -2749,104 +2453,13 @@ class XRHitTestResult {
   }
   getPose(baseSpace) {
     const space = new XRSpace();
-    space._baseMatrix = copy$5(create$5(), this[PRIVATE$18].transform.matrix);
+    space._baseMatrix = copy(create(), this[PRIVATE$18].transform.matrix);
     return this[PRIVATE$18].frame.getPose(space, baseSpace);
   }
   get _frame() {
     return this[PRIVATE$18].frame;
   }
 }
-
-function create$7() {
-  let out = new ARRAY_TYPE$1(4);
-  if(ARRAY_TYPE$1 != Float32Array) {
-    out[0] = 0;
-    out[1] = 0;
-    out[2] = 0;
-    out[3] = 0;
-  }
-  return out;
-}
-
-function fromValues$7(x, y, z, w) {
-  let out = new ARRAY_TYPE$1(4);
-  out[0] = x;
-  out[1] = y;
-  out[2] = z;
-  out[3] = w;
-  return out;
-}
-
-function set$7(out, x, y, z, w) {
-  out[0] = x;
-  out[1] = y;
-  out[2] = z;
-  out[3] = w;
-  return out;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function transformMat4$3(out, a, m) {
-  let x = a[0], y = a[1], z = a[2], w = a[3];
-  out[0] = m[0] * x + m[4] * y + m[8] * z + m[12] * w;
-  out[1] = m[1] * x + m[5] * y + m[9] * z + m[13] * w;
-  out[2] = m[2] * x + m[6] * y + m[10] * z + m[14] * w;
-  out[3] = m[3] * x + m[7] * y + m[11] * z + m[15] * w;
-  return out;
-}
-
-
-
-
-
-
-
-
-
-
-
-const forEach$3 = (function() {
-  let vec = create$7();
-  return function(a, stride, offset, count, fn, arg) {
-    let i, l;
-    if(!stride) {
-      stride = 4;
-    }
-    if(!offset) {
-      offset = 0;
-    }
-    if(count) {
-      l = Math.min((count * stride) + offset, a.length);
-    } else {
-      l = a.length;
-    }
-    for(i = offset; i < l; i += stride) {
-      vec[0] = a[i]; vec[1] = a[i+1]; vec[2] = a[i+2]; vec[3] = a[i+3];
-      fn(vec, vec, arg);
-      a[i] = vec[0]; a[i+1] = vec[1]; a[i+2] = vec[2]; a[i+3] = vec[3];
-    }
-    return a;
-  };
-})();
 
 const PRIVATE$19 = Symbol('@@webxr-polyfill/XRRay');
 class XRRay {
@@ -2856,10 +2469,10 @@ class XRRay {
     if (origin && origin instanceof XRRigidTransform$1) {
       const transform = origin;
       const matrix = transform.matrix;
-      const originVec4 = set$7(create$7(), _origin.x, _origin.y, _origin.z, _origin.w);
-      const directionVec4 = set$7(create$7(), _direction.x, _direction.y, _direction.z, _direction.w);
-      transformMat4$3(originVec4, originVec4, matrix);
-      transformMat4$3(directionVec4, directionVec4, matrix);
+      const originVec4 = set$3(create$3(), _origin.x, _origin.y, _origin.z, _origin.w);
+      const directionVec4 = set$3(create$3(), _direction.x, _direction.y, _direction.z, _direction.w);
+      transformMat4$1(originVec4, originVec4, matrix);
+      transformMat4$1(directionVec4, directionVec4, matrix);
       _origin.x = originVec4[0];
       _origin.y = originVec4[1];
       _origin.z = originVec4[2];
@@ -2882,11 +2495,11 @@ class XRRay {
         _direction.w = direction.w;
       }
     }
-    const length = Math.sqrt(_direction.x * _direction.x +
+    const length$$1 = Math.sqrt(_direction.x * _direction.x +
       _direction.y * _direction.y + _direction.z * _direction.z) || 1;
-    _direction.x = _direction.x / length;
-    _direction.y = _direction.y / length;
-    _direction.z = _direction.z / length;
+    _direction.x = _direction.x / length$$1;
+    _direction.y = _direction.y / length$$1;
+    _direction.z = _direction.z / length$$1;
     this[PRIVATE$19] = {
       origin: new DOMPointReadOnly(_origin.x, _origin.y, _origin.z, _origin.w),
       direction: new DOMPointReadOnly(_direction.x, _direction.y, _direction.z, _direction.w),
@@ -2903,27 +2516,27 @@ class XRRay {
     if (this[PRIVATE$19].matrix) {
       return this[PRIVATE$19].matrix;
     }
-    const z = set$6(create$6(), 0, 0, -1);
-    const origin = set$6(create$6(),
+    const z = set$1(create$1(), 0, 0, -1);
+    const origin = set$1(create$1(),
       this[PRIVATE$19].origin.x,
       this[PRIVATE$19].origin.y,
       this[PRIVATE$19].origin.z
     );
-    const direction = set$6(create$6(),
+    const direction = set$1(create$1(),
       this[PRIVATE$19].direction.x,
       this[PRIVATE$19].direction.y,
       this[PRIVATE$19].direction.z
     );
-    const axis = cross$1(create$6(), direction, z);
-    const cosAngle = dot$3(direction, z);
-    const rotation = create$5();
+    const axis = cross(create$1(), direction, z);
+    const cosAngle = dot(direction, z);
+    const rotation = create();
     if (cosAngle > -1 && cosAngle < 1) {
-      fromRotation$2(rotation, Math.acos(cosAngle), axis);
+      fromRotation(rotation, Math.acos(cosAngle), axis);
     } else if (cosAngle === -1) {
-      fromRotation$2(rotation, Math.acos(cosAngle), set$6(create$6(), 1, 0, 0));
+      fromRotation(rotation, Math.acos(cosAngle), set$1(create$1(), 1, 0, 0));
     }
-    const translation = fromTranslation$2(create$5(), origin);
-    const matrix = multiply$5(create$5(), translation, rotation);
+    const translation = fromTranslation(create(), origin);
+    const matrix = multiply(create(), translation, rotation);
     this[PRIVATE$19].matrix = matrix;
     return matrix;
   }
@@ -3026,8 +2639,8 @@ class XRPlaneMesh extends XRMesh {
 		this._extent = extent;
 		this._alignment = alignment;
 		this._planeFeatureChanged = true;
-		this._yAxis = fromValues$7(0,1,0, 0);
-        this._normal = create$7();
+		this._yAxis = fromValues$3(0,1,0, 0);
+        this._normal = create$3();
 		this._boundaryVerticesChanged = true;
 		this._boundaryVertices = [];
 		this._geometry = geometry;
@@ -3040,7 +2653,7 @@ class XRPlaneMesh extends XRMesh {
 	}
 	updatePlaneData(transform, center, extent, alignment, geometry, timestamp) {
 		super.updateModelMatrix(transform, timestamp);
-		if (!equals$8(this._center, center) || !equals$8(this._extent, extent) ||
+		if (!equals$2(this._center, center) || !equals$2(this._extent, extent) ||
 		 	this._alignment) {
 			this._center = center;
 			this._extent = extent;
@@ -3058,7 +2671,7 @@ class XRPlaneMesh extends XRMesh {
 	_updateGeometry(geometry) {
 		super._updateGeometry(geometry);
 		let g = geometry;
-		const n = transformMat4$3(this._normal, this._yAxis, this._transform);
+		const n = transformMat4$1(this._normal, this._yAxis, this._transform);
 		const nx = n[0], ny = n[1], nz = n[2];
 		let currentVertexIndex = 0;
 		if (this._boundaryVertices.length != g.boundaryVertexCount * 3) {
@@ -3067,18 +2680,18 @@ class XRPlaneMesh extends XRMesh {
 			this._vertexNormalsChanged = true;
 			this._vertexNormals = new Float32Array( g.vertexCount * 3 );
 		} else {
-			this._vertexNormalsChanged = (Math.abs(this._vertexNormals[0] - nx) > EPSILON$1 ||
-					Math.abs(this._vertexNormals[1] - ny) > EPSILON$1 ||
-					Math.abs(this._vertexNormals[2] - nz) > EPSILON$1);
+			this._vertexNormalsChanged = (Math.abs(this._vertexNormals[0] - nx) > EPSILON ||
+					Math.abs(this._vertexNormals[1] - ny) > EPSILON ||
+					Math.abs(this._vertexNormals[2] - nz) > EPSILON);
 			if (this._useGeomArrays) {
                 this._vertexPositionsChanged = !XRMesh.arrayFuzzyEquals(this._boundaryVertices, g.boundaryVertices);
             } else {
                 this._boundaryVerticesChanged = false;
                 currentVertexIndex = 0;
                 for ( var i = 0, l = g.vertexCount; i < l; i++ ) {
-                    if (Math.abs(this._boundaryVertices[currentVertexIndex++] - g.boundaryVertices[i].x) > EPSILON$1 ||
-                        Math.abs(this._boundaryVertices[currentVertexIndex++] - g.boundaryVertices[i].y) > EPSILON$1 ||
-                        Math.abs(this._boundaryVertices[currentVertexIndex++] - g.boundaryVertices[i].z) > EPSILON$1)
+                    if (Math.abs(this._boundaryVertices[currentVertexIndex++] - g.boundaryVertices[i].x) > EPSILON ||
+                        Math.abs(this._boundaryVertices[currentVertexIndex++] - g.boundaryVertices[i].y) > EPSILON ||
+                        Math.abs(this._boundaryVertices[currentVertexIndex++] - g.boundaryVertices[i].z) > EPSILON)
                     {
                         this._boundaryVerticesChanged = true;
                         break
@@ -4219,9 +3832,9 @@ class ARKitWrapper extends EventTarget {
 		this._lightProbe = new XRLightProbe({
 			indirectIrradiance: data.light_intensity / 1000
 		});
-		copy$5(this._cameraTransform, data.camera_transform);
-		copy$5(this._viewMatrix, data.camera_view);
-		copy$5(this._projectionMatrix, data.projection_camera);
+		copy(this._cameraTransform, data.camera_transform);
+		copy(this._viewMatrix, data.camera_view);
+		copy(this._projectionMatrix, data.projection_camera);
 		this._worldMappingStatus = data.worldMappingStatus;
 		if (data.newObjects.length) {
 			for (let i = 0; i < data.newObjects.length; i++) {
@@ -4872,14 +4485,14 @@ class ARKitDevice extends XRDevice {
 		} else {
 			document.addEventListener('DOMContentLoaded', insertWrapperDiv);
 		}
-		this._headModelMatrix = create$5();
-		this._headModelMatrixInverse = create$5();
-		this._projectionMatrix = create$5();
-		this._deviceProjectionMatrix = create$5();
-		this._eyeLevelMatrix = identity$3(create$5());
-		this._stageMatrix = identity$3(create$5());
+		this._headModelMatrix = create();
+		this._headModelMatrixInverse = create();
+		this._projectionMatrix = create();
+		this._deviceProjectionMatrix = create();
+		this._eyeLevelMatrix = identity(create());
+		this._stageMatrix = identity(create());
 		this._stageMatrix[13] = 1.3;
-		this._identityMatrix = identity$3(create$5());
+		this._identityMatrix = identity(create());
 		this._baseFrameSet = false;
 		this._frameOfRefRequestsWaiting = [];
 		this._depthNear = 0.1;
@@ -4971,8 +4584,8 @@ class ARKitDevice extends XRDevice {
 	}
 	logPose() {
 		console.log('pose',
-			getTranslation$1(new Float32Array(3), this._headModelMatrix),
-			getRotation$1(new Float32Array(4), this._headModelMatrix)
+			getTranslation(new Float32Array(3), this._headModelMatrix),
+			getRotation(new Float32Array(4), this._headModelMatrix)
 		);
 	}
 	addHitTestSource(source) {
@@ -5003,11 +4616,11 @@ class ARKitDevice extends XRDevice {
 			return;
 		}
 		for (const source of this._hitTestSources) {
-			const proj = create$6();
+			const proj = create$1();
 			proj[0] = source._offsetRay.direction.x;
 			proj[1] = source._offsetRay.direction.y;
 			proj[2] = source._offsetRay.direction.z;
-			transformMat4$2(proj, proj, this._arKitWrapper._projectionMatrix);
+			transformMat4(proj, proj, this._arKitWrapper._projectionMatrix);
 			const x = (proj[0] + 1.0) * 0.5;
 			const y = (-proj[1] + 1.0) * 0.5;
 			this._arKitWrapper.hitTest(x, y, ARKitWrapper.HIT_TEST_TYPE_EXISTING_PLANE_USING_GEOMETRY).then(hits => {
@@ -5041,11 +4654,11 @@ class ARKitDevice extends XRDevice {
 		return false;
 	}
 	setProjectionMatrix(matrix) {
-		copy$5(this._deviceProjectionMatrix, matrix);
+		copy(this._deviceProjectionMatrix, matrix);
 	}
 	setBaseViewMatrix(matrix) {
-		copy$5(this._headModelMatrixInverse, matrix);
-		invert$3(this._headModelMatrix, this._headModelMatrixInverse);
+		copy(this._headModelMatrixInverse, matrix);
+		invert(this._headModelMatrix, this._headModelMatrixInverse);
 		if (!this._baseFrameSet) {
 			this._baseFrameSet = true;
 			for (let i = 0; i < this._frameOfRefRequestsWaiting.length; i++) {
@@ -5233,7 +4846,7 @@ class ARKitDevice extends XRDevice {
 			}
 			this._wrapperDiv.style.display = "none";
 			this._activeSession = null;
-			identity$3(this._headModelMatrix);
+			identity(this._headModelMatrix);
 			this._arKitWrapper.stop();
 			this._domOverlayRoot = null;
 			this._topMostDomElement = null;
@@ -5251,7 +4864,7 @@ class ARKitDevice extends XRDevice {
 		const session = this._sessions.get(sessionId);
 		this._frameSession = session;
 		if (session.immersive) {
-			copy$5(this._projectionMatrix, this._deviceProjectionMatrix);
+			copy(this._projectionMatrix, this._deviceProjectionMatrix);
 			if (session.baseLayer) {
 				const context = session.baseLayer.context;
 				const currentClearColor = context.getParameter(context.COLOR_CLEAR_VALUE);
@@ -5268,7 +4881,7 @@ class ARKitDevice extends XRDevice {
 		} else {
 			if (session.baseLayer) {
 				const canvas = session.baseLayer.context.canvas;
-				perspective$1(this._projectionMatrix,
+				perspective(this._projectionMatrix,
 					renderState.inlineVerticalFieldOfView,
 					canvas.width/canvas.height,
 					renderState.depthNear,
@@ -5399,22 +5012,22 @@ class ARKitDevice extends XRDevice {
 				const clientY = this._touches[i].y;
 				const normalizedX = (clientX / deviceWidth) * 2.0 - 1.0;
 				const normalizedY = -(clientY / deviceHeight) * 2.0 + 1.0;
-				const viewMatrixInverse = invert$3(create$5(), this._headModelMatrix);
+				const viewMatrixInverse = invert(create(), this._headModelMatrix);
 				coordinateSystem._transformBasePoseMatrix(viewMatrixInverse, viewMatrixInverse);
-				const matrix = identity$3(create$5());
-				rotateY$3(matrix, matrix, -normalizedX * halfFov * aspect);
-				rotateX$3(matrix, matrix, normalizedY * halfFov);
+				const matrix = identity(create());
+				rotateY(matrix, matrix, -normalizedX * halfFov * aspect);
+				rotateX(matrix, matrix, normalizedY * halfFov);
 				matrix[12] = normalizedX * Math.tan(halfFov) * near * aspect;
 				matrix[13] = normalizedY * Math.tan(halfFov) * near;
 				matrix[14] = -near;
-				multiply$5(matrix, viewMatrixInverse, matrix);
+				multiply(matrix, viewMatrixInverse, matrix);
 				const gamepad = this._gamepads[i];
 				const gamepadPose = gamepad.pose;
-				getTranslation$1(gamepadPose.position, matrix);
-				getRotation$1(gamepadPose.orientation, matrix);
+				getTranslation(gamepadPose.position, matrix);
+				getRotation(gamepadPose.orientation, matrix);
 				const pose = inputSourceImpl.getXRPose(coordinateSystem, poseType);
-				fromRotationTranslation$1(pose.transform.matrix, gamepadPose.orientation, gamepadPose.position);
-				invert$3(pose.transform.inverse.matrix, pose.transform.matrix);
+				fromRotationTranslation(pose.transform.matrix, gamepadPose.orientation, gamepadPose.position);
+				invert(pose.transform.inverse.matrix, pose.transform.matrix);
 				return pose;
 			}
 		}
@@ -5475,8 +5088,8 @@ class ARWatcher extends ARKitWatcher {
 	}
 }
 
-const _workingMatrix = create$5();
-const _workingMatrix2 = create$5();
+const _workingMatrix = create();
+const _workingMatrix2 = create();
 WebXRPolyfill.prototype._patchNavigatorXR = function() {
 	this.xr = new XRSystem(Promise.resolve(new ARKitDevice(this.global)));
 	this.xr._mozillaXRViewer = true;
@@ -5501,12 +5114,12 @@ const installAnchorsExtension = () => {
 		if (!this.session[PRIVATE$15].immersive) {
 			return Promise.reject();
 		}
-		const workingMatrix1 = create$5();
+		const workingMatrix1 = create();
 		if (value instanceof Float32Array) {
 			return new Promise((resolve, reject) => {
 				let localReferenceSpace = this.session[PRIVATE$15]._localSpace;
-				copy$5(_workingMatrix, this.getPose(localReferenceSpace, referenceSpace).transform.matrix);
-				const anchorInWorldMatrix = multiply$5(create$5(), _workingMatrix, value);
+				copy(_workingMatrix, this.getPose(localReferenceSpace, referenceSpace).transform.matrix);
+				const anchorInWorldMatrix = multiply(create(), _workingMatrix, value);
 				_arKitWrapper.createAnchor(anchorInWorldMatrix)
 					.then(resolve)
 					.catch((...params) => {
